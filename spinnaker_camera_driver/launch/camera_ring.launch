@@ -1,0 +1,56 @@
+<launch>
+
+  <arg name="color_throughput_limit" value="15000000"/>
+  <arg name="gray_throughput_limit" value="12000000"/>
+  <arg name="packet_size" value="9000"/>
+
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_c1"/>
+    <arg name="left_camera_serial"  value="18550028"/>
+    <arg name="right_camera_serial" value="18522264"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg color_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_c2"/>
+    <arg name="left_camera_serial"  value="18550026"/>
+    <arg name="right_camera_serial" value="18522275"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg color_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_c3"/>
+    <arg name="left_camera_serial"  value="19074477"/>
+    <arg name="right_camera_serial" value="18522261"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg color_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_g1"/>
+    <arg name="left_camera_serial"  value="18487458"/>
+    <arg name="right_camera_serial" value="18487457"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg gray_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_g2"/>
+    <arg name="left_camera_serial"  value="18487460"/>
+    <arg name="right_camera_serial" value="18487459"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg gray_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+  <include file="$(find spinnaker_camera_driver)/launch/stereo.launch">
+    <arg name="camera_name" value="stereo_g3"/>
+    <arg name="left_camera_serial"  value="18487462"/>
+    <arg name="right_camera_serial" value="18487461"/>
+    <arg name="DeviceLinkThroughputLimit" value="$(arg gray_throughput_limit)"/>
+    <arg name="gevscpd_packetsize" value="$(arg packet_size)"/>
+  </include>
+
+</launch>

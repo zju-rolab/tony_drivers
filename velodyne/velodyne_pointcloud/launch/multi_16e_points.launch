@@ -1,0 +1,17 @@
+<launch>
+
+    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+    <arg name="device_ip" value="192.168.200.2"/>
+    <arg name="frame_id" value="velodyne1"/>
+    </include>
+
+    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+    <arg name="device_ip" value="192.168.200.3"/>
+    <arg name="frame_id" value="velodyne2"/>
+    </include>
+
+    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+    <arg name="device_ip" value="192.168.200.3"/>
+    <arg name="frame_id" value="velodyne3"/>
+    </include>
+</launch>
