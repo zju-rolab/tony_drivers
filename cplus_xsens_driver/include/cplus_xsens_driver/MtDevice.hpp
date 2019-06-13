@@ -46,7 +46,7 @@ namespace xsens_device
 		uint32_t realtime_sec;
 		uint32_t realtime_nsec;
 		double realtime;
-		float quaternion[3];
+		float quaternion[4];
 		float acceleration[3];
 		float turn_rate[3];
 	};
