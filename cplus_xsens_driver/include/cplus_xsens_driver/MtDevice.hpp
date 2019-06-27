@@ -85,7 +85,8 @@ namespace xsens_device
      int first_packet_time_flag_;
      int pub_flag_;
      int packet_counter_begin;
-
+     bool loop_counter_;
+		
      uint32_t loop_;
      uint32_t short_counter_;
 	};
@@ -116,6 +117,7 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
         first_packet_num_flag_ = 1;
         first_packet_time_flag_ = 1;
         pub_flag_ = 0;
+	loop_counter_=true;
 
     }
     
@@ -293,6 +295,11 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
                 //Sample Time Fine
                 if ((packet.id[1]&0xF0) == 0x60) {
                         mtdata2_.fine_time = packet.data[0]*pow(2,24)+packet.data[1]*pow(2,16)+packet.data[2]*pow(2,8)+packet.data[3];
+			if(loop_counter_)
+			{
+				loop = uint32_t((mtdata2_.fine_time/25) >> 16);
+				loop_counter_ = false;
+			}
                 }
                 //Sample Time Coarse
                 if ((packet.id[1]&0xF0) == 0x70)
