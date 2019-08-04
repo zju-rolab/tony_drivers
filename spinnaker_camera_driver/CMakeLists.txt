@@ -18,9 +18,9 @@ find_package(OpenCV REQUIRED)
 generate_dynamic_reconfigure_options(
   cfg/Spinnaker.cfg
 )
-add_message_files(FILES
-  pkt_counter.msg
-)
+#add_message_files(FILES
+#  pkt_counter.msg
+#)
 
 catkin_package(CATKIN_DEPENDS
   message_runtime
