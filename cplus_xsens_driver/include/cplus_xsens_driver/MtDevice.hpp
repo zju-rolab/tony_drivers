@@ -297,7 +297,7 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
                         mtdata2_.fine_time = packet.data[0]*pow(2,24)+packet.data[1]*pow(2,16)+packet.data[2]*pow(2,8)+packet.data[3];
 			if(loop_counter_)
 			{
-				loop = uint32_t((mtdata2_.fine_time/25) >> 16);
+				loop_ = uint32_t((mtdata2_.fine_time/25) >> 16);
 				loop_counter_ = false;
 			}
                 }
