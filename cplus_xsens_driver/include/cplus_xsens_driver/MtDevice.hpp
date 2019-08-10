@@ -26,47 +26,47 @@ typedef unsigned char uchar;
 
 namespace xsens_device
 {
-	struct MTMessage{
-		uchar bid;
-		uchar mid;
-		uchar len;
-		uchar data[MAX_MESSAGE_LENGTH];
-		uchar checksum;
-	};
-	struct MTPacket{
-		uchar id[2];       
-		uchar len;
-		uchar data[MAX_MESSAGE_LENGTH];
-	};
-	struct MTData2Data{
-		uint32_t packet_counter;
-		uint32_t fine_time;
-		uint32_t coarse_time;
-		double completely_time;
-		uint32_t realtime_sec;
-		uint32_t realtime_nsec;
-		double realtime;
-		float quaternion[4];
-		float acceleration[3];
-		float turn_rate[3];
-	};
-	class MTDevice
-	{
-	public:
+struct MTMessage{
+	uchar bid;
+	uchar mid;
+	uchar len;
+	uchar data[MAX_MESSAGE_LENGTH];
+	uchar checksum;
+};
+struct MTPacket{
+	uchar id[2];       
+	uchar len;
+	uchar data[MAX_MESSAGE_LENGTH];
+};
+struct MTData2Data{
+	uint32_t packet_counter;
+	uint32_t sample_time_fine;
+	uint32_t sample_time_coarse;
+	double sample_time;
+	uint32_t realtime_sec;
+	uint32_t realtime_nsec;
+	double realtime;
+	float quaternion[4];
+	float acceleration[3];
+	float turn_rate[3];
+};
+class MTDevice
+{
+public:
      MTDevice();
      ~MTDevice();
      void parse();
      MTMessage message_;
      MTData2Data mtdata2_;
     
-     ros::NodeHandle nh_;
+     ros::NodeHandle nh;
      ros::Publisher imu_data_pub_;
      ros::Publisher imu_packet_counter_pub_ ; 
 
      sensor_msgs::Imu imu_message_;
      cplus_xsens_driver::packet_counter packet_counter_;	
 
-	private:
+private:
      void read();
      void parseMTPacket(const MTPacket& packet);
      void receiveCallback(const boost::system::error_code &ec, size_t bytes_transferred);
@@ -78,18 +78,17 @@ namespace xsens_device
      boost::circular_buffer<uchar>  buf_;
      uchar raw_buf_[MAX_MESSAGE_LENGTH];
 
-     ros::Time first_packet_time_;
-     double timedifference_tosec_;
+     ros::Time begin_;
+     double diff_tosec;
      int step_;
-     int first_packet_num_flag_;
-     int first_packet_time_flag_;
+     int begin_num_flag;
+     int begin_flag_;
      int pub_flag_;
      int packet_counter_begin;
-     bool loop_counter_;
 		
      uint32_t loop_;
      uint32_t short_counter_;
-	};
+};
 
 
 MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
@@ -99,8 +98,8 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
         loop_ = 0;
         short_counter_ = 0;
 
-        imu_data_pub_ = nh_.advertise<sensor_msgs::Imu>("imu_data",100);
-        imu_packet_counter_pub_ = nh_.advertise<cplus_xsens_driver::packet_counter>("packet_counter",100);
+        imu_data_pub_ = nh.advertise<sensor_msgs::Imu>("imu_data",100);
+        imu_packet_counter_pub_ = nh.advertise<cplus_xsens_driver::packet_counter>("packet_counter",100);
 
         port_.reset(new boost::asio::serial_port(io_srv_, "/dev/ttyUSB0"));
         port_->set_option(boost::asio::serial_port_base::baud_rate(460800));
@@ -114,36 +113,38 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
 
         io_srv_.post(boost::bind(&MTDevice::read,this));
         thrd_io_srv_.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &io_srv_)));
-        first_packet_num_flag_ = 1;
-        first_packet_time_flag_ = 1;
+        begin_num_flag = 1;
+        begin_flag_ = 1;
         pub_flag_ = 0;
-	loop_counter_=true;
 
     }
     
-     MTDevice::~MTDevice() {
-        port_->close();
-    }
+MTDevice::~MTDevice() {port_->close();}
 
 
-    float MTDevice::getData2Float(const uchar* src){
-        float ret;
-        uint8_t* dest = (uint8_t*) &ret;
-        dest[0] = src[3];
-        dest[1] = src[2];
-        dest[2] = src[1];
-        dest[3] = src[0];
-        
-        return ret;
-    }
+float MTDevice::getData2Float(const uchar* src){
+	float ret;
+	uint8_t* dest = (uint8_t*) &ret;
+	dest[0] = src[3];
+	dest[1] = src[2];
+	dest[2] = src[1];
+	dest[3] = src[0];
 
-    void MTDevice::read() {
-        if (port_.get() == NULL || !port_->is_open()){
-            std::cout << "Port not opened\n" << std::endl;
-            return;
-        }
-        port_->async_read_some(boost::asio::buffer(raw_buf_,sizeof(raw_buf_)),boost::bind(&MTDevice::receiveCallback,this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
-    }
+	return ret;
+}
+
+void MTDevice::read()
+{
+  if (port_.get() == NULL || !port_->is_open()) {
+    std::cout << "Port not opened\n" << std::endl;
+    return;
+  }
+  port_->async_read_some(
+      boost::asio::buffer(raw_buf_, sizeof(raw_buf_)),
+      boost::bind(&MTDevice::receiveCallback, this,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+}
 
     void MTDevice::parse() {
         size_t old_size = 0;
@@ -251,12 +252,10 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
             std::cout << "read error: " << ec.message() << std::endl;
             read();
             return;
-        }
-        // else
-        // {
-        //     ROS_INFO("bytes_transferred=%lu", bytes_transferred);
-        // }
- 
+        }else{
+		ROS_DEBUG("bytes_transferred=%lu",bytes_transferred);
+	}
+
         for (unsigned int i = 0; i < bytes_transferred; ++i) {
             buf_.push_back(raw_buf_[i]);
         }
@@ -281,10 +280,10 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
                     packet_counter_.packet_counter = (loop_ << 16) | mtdata2_.packet_counter;
                     
                     ROS_INFO ("packet_counter=%d", packet_counter_.packet_counter);
-                    if (first_packet_num_flag_)
+                    if (begin_num_flag)
                     {
                         packet_counter_begin = packet_counter_.packet_counter;
-                        first_packet_num_flag_ = false;
+                        begin_num_flag = false;
                     }
 
                     //It's not stable at first, so abandon some packets at beginning and then publish the topic.
@@ -294,31 +293,38 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
 
                 //Sample Time Fine
                 if ((packet.id[1]&0xF0) == 0x60) {
-                        mtdata2_.fine_time = packet.data[0]*pow(2,24)+packet.data[1]*pow(2,16)+packet.data[2]*pow(2,8)+packet.data[3];
-			if(loop_counter_)
-			{
-				loop_ = uint32_t((mtdata2_.fine_time/25) >> 16);
-				loop_counter_ = false;
-			}
+                        mtdata2_.sample_time_fine = ((uint32_t)packet.data[0] << 24) + 
+                                    ((uint32_t)packet.data[1] << 16) + 
+                                    ((uint32_t)packet.data[2] <<  8) + 
+                                    ((uint32_t)packet.data[3] <<  0);
                 }
                 //Sample Time Coarse
                 if ((packet.id[1]&0xF0) == 0x70)
                 {
                     //since the system time is not accurate, it's better to use the sample time from IMU.
-                    mtdata2_.coarse_time = packet.data[0]*pow(2,24)+packet.data[1]*pow(2,16)+packet.data[2]*pow(2,8)+packet.data[3];
-                    mtdata2_.completely_time = (mtdata2_.coarse_time + ( mtdata2_.fine_time % 10000 )/10000.0);
-                    if ( pub_flag_ && first_packet_time_flag_)
+                     mtdata2_.sample_time_coarse = ((uint32_t)packet.data[0] << 24) + 
+                                      ((uint32_t)packet.data[1] << 16) + 
+                                      ((uint32_t)packet.data[2] <<  8) + 
+                                      ((uint32_t)packet.data[3] <<  0);
+		mtdata2_.sample_time =
+		    (mtdata2_.sample_time_coarse + (mtdata2_.sample_time_fine % 10000) / 10000.0);
+                    if ( pub_flag_ && begin_flag_)
                     {
-                        first_packet_time_ = ros::Time::now();
-                        timedifference_tosec_ = first_packet_time_.toSec() - mtdata2_.completely_time;
-                        first_packet_time_flag_ = false;
+                        begin_ = ros::Time::now();
+                        diff_tosec = begin_.toSec() - mtdata2_.sample_time;
+                        begin_flag_ = false;
                     }
-                    mtdata2_.realtime = mtdata2_.completely_time + timedifference_tosec_;
+                    mtdata2_.realtime = mtdata2_.sample_time + diff_tosec;
                     mtdata2_.realtime_sec = (uint32_t)floor(mtdata2_.realtime);
                     mtdata2_.realtime_nsec = (mtdata2_.realtime - mtdata2_.realtime_sec)*pow(10,9);
                     packet_counter_.head.stamp.sec = mtdata2_.realtime_sec;
                     packet_counter_.head.stamp.nsec = mtdata2_.realtime_nsec;
-                    ros::Time time = ros::Time::now();
+                    packet_counter_.sample_fine_time = mtdata2_.sample_time;
+		    // Fill packet counter
+		    int loop = std::round((400 * packet_counter_.sample_fine_time - mtdata2_.packet_counter) / (1 << 16));
+		    mtdata2_.packet_counter += loop * (1 << 16);
+		    packet_counter_.packet_counter = mtdata2_.packet_counter;
+		    ROS_DEBUG("packet_counter=%d", packet_counter_.packet_counter);
                 }
             }
 
@@ -400,4 +406,3 @@ MTDevice::MTDevice():buf_(8 * MAX_MESSAGE_LENGTH, 0), step_(0)
 }// namespace xsens_device
 
 #endif // !_MTDEVICE_H__
-
